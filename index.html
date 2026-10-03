@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>알공 웹 PoC</title>
+<style>
+html,body{margin:0;height:100%;background:#1b2140;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;color:#fff}
+.w{height:100%;display:grid;place-items:center;padding:16px;box-sizing:border-box}
+form{background:#262e57;padding:28px 24px;border-radius:16px;width:100%;max-width:320px;box-sizing:border-box;box-shadow:0 10px 30px #0006}
+h1{font-size:18px;margin:0 0 6px}p{margin:0 0 18px;font-size:13px;color:#b9c0e6}
+input,button{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border-radius:10px;border:0}
+input{background:#fff;color:#111;margin-bottom:10px}button{background:#ffc928;color:#3a2a00;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6}.e{color:#ff8a8a;font-size:13px;min-height:18px;margin-top:10px}
+</style></head><body><div class="w"><form id="f">
+<h1>알공 웹 PoC</h1><p>팀 내부 공유용입니다. 비밀번호를 입력하세요.</p>
+<input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호" autofocus>
+<button id="b">들어가기</button><div class="e" id="e"></div></form></div>
+<script>
+const META={"salt":"zJM3THJ/uiqh45kcRqhMug==","iter":310000};
+const $=(i)=>document.getElementById(i);
+async function derive(pw){const s=Uint8Array.from(atob(META.salt),c=>c.charCodeAt(0));
+ const b=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt:s,iterations:META.iter,hash:'SHA-256'},b,{name:'AES-GCM',length:256},true,['decrypt']);}
+async function check(key){const r=await fetch('check.bin',{cache:'no-store'});const u=new Uint8Array(await r.arrayBuffer());
+ try{await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(0,12)},key,u.slice(12));return true}catch{return false}}
+async function enter(raw){const reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;
+ const sw=reg.active||navigator.serviceWorker.controller;
+ await new Promise(r=>{const c=new MessageChannel();c.port1.onmessage=()=>r();sw.postMessage({type:'key',raw},[c.port2]);});
+ location.replace('app.html'+location.search);}
+$('f').onsubmit=async(e)=>{e.preventDefault();$('b').disabled=true;$('e').textContent='확인 중…';
+ try{const key=await derive($('pw').value);if(!(await check(key))){$('e').textContent='비밀번호가 맞지 않습니다.';$('b').disabled=false;return;}
+ const raw=await crypto.subtle.exportKey('raw',key);$('e').textContent='불러오는 중…';await enter(raw);}
+ catch(err){$('e').textContent='오류: '+err;$('b').disabled=false;}};
+if(!('serviceWorker' in navigator)){$('e').textContent='이 브라우저는 지원하지 않습니다(서비스 워커 필요).';$('b').disabled=true;}
+</script></body></html>
