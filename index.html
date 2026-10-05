@@ -14,7 +14,7 @@ button:disabled{opacity:.6}.e{color:#ff8a8a;font-size:13px;min-height:18px;margi
 <input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호" autofocus>
 <button id="b">들어가기</button><div class="e" id="e"></div></form></div>
 <script>
-const META={"salt":"zj4pt7Yy9RuZEY24oIRNuA==","iter":310000};
+const META={"salt":"i4sboXiumHHuIfUgg0xA7A==","iter":310000};
 const $=(i)=>document.getElementById(i);
 async function derive(pw){const s=Uint8Array.from(atob(META.salt),c=>c.charCodeAt(0));
  const b=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
